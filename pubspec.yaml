@@ -5,12 +5,12 @@ homepage: https://github.com/espresso3389/pdfrx
 repository: https://github.com/espresso3389/pdfrx
 issue_tracker: https://github.com/espresso3389/pdfrx/issues
 screenshots:
-  - description: 'Viewer example on Web'
+  - description: "Viewer example on Web"
     path: screenshot.jpg
 
 environment:
-  sdk: '>=3.7.0 <4.0.0'
-  flutter: ">=3.29.0"
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.5"
 
 dependencies:
   collection:
@@ -22,7 +22,7 @@ dependencies:
   path:
   path_provider: ^2.1.5
   rxdart:
-  synchronized: ^3.3.1
+  synchronized: ^3.3.0+3
   url_launcher: ^6.3.1
   vector_math: ^2.1.4
   web: ^1.1.1
@@ -72,4 +72,3 @@ ffigen:
   comments:
     style: any
     length: full
-

@@ -12,7 +12,8 @@ import 'pdfrx_js.dart';
 
 /// Calls PDFium WASM worker with the given command and parameters.
 @JS()
-external JSPromise<JSAny?> pdfiumWasmSendCommand([String command, JSAny? parameters, JSArray<JSAny>? transfer]);
+external JSPromise<JSAny?> pdfiumWasmSendCommand(
+    [String command, JSAny? parameters, JSArray<JSAny>? transfer]);
 
 /// The URL of the PDFium WASM worker script; pdfium_client.js tries to load worker script from this URL.'
 ///
@@ -31,18 +32,19 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
 
   Future<void> _init() async {
     pdfiumWasmWorkerUrl = _getWorkerUrl();
-    final moduleUrl = _resolveUrl(Pdfrx.pdfiumWasmModulesUrl ?? defaultWasmModulePath);
-    final script =
-        web.document.createElement('script') as web.HTMLScriptElement
-          ..type = 'text/javascript'
-          ..charset = 'utf-8'
-          ..async = true
-          ..type = 'module'
-          ..src = _resolveUrl('pdfium_client.js', baseUrl: moduleUrl);
+    final moduleUrl =
+        _resolveUrl(Pdfrx.pdfiumWasmModulesUrl ?? defaultWasmModulePath);
+    final script = web.document.createElement('script') as web.HTMLScriptElement
+      ..type = 'text/javascript'
+      ..charset = 'utf-8'
+      ..async = true
+      ..type = 'module'
+      ..src = _resolveUrl('pdfium_client.js', baseUrl: moduleUrl);
     web.document.querySelector('head')!.appendChild(script);
     final completer = Completer();
     final sub1 = script.onLoad.listen((_) => completer.complete());
-    final sub2 = script.onError.listen((event) => completer.completeError(event));
+    final sub2 =
+        script.onError.listen((event) => completer.completeError(event));
     try {
       await completer.future;
     } catch (e) {
@@ -55,10 +57,12 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
 
   /// Workaround for Cross-Origin-Embedder-Policy restriction on WASM enabled environments
   String _getWorkerUrl() {
-    final moduleUrl = _resolveUrl(Pdfrx.pdfiumWasmModulesUrl ?? defaultWasmModulePath);
+    final moduleUrl =
+        _resolveUrl(Pdfrx.pdfiumWasmModulesUrl ?? defaultWasmModulePath);
     final workerJsUrl = _resolveUrl('pdfium_worker.js', baseUrl: moduleUrl);
     final pdfiumWasmUrl = _resolveUrl('pdfium.wasm', baseUrl: moduleUrl);
-    final content = 'const pdfiumWasmUrl="$pdfiumWasmUrl";importScripts("$workerJsUrl");';
+    final content =
+        'const pdfiumWasmUrl="$pdfiumWasmUrl";importScripts("$workerJsUrl");';
     final blob = web.Blob(
       [content].jsify() as JSArray<web.BlobPart>,
       web.BlobPropertyBag(type: 'application/javascript'),
@@ -69,11 +73,15 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
   /// Resolves the given [relativeUrl] against the [baseUrl].
   /// If [baseUrl] is null, it uses the current page URL.
   static String _resolveUrl(String relativeUrl, {String? baseUrl}) {
-    return Uri.parse(baseUrl ?? web.window.location.href).resolveUri(Uri.parse(relativeUrl)).toString();
+    return Uri.parse(baseUrl ?? web.window.location.href)
+        .resolveUri(Uri.parse(relativeUrl))
+        .toString();
   }
 
-  Future<Map<Object?, dynamic>> sendCommand(String command, {Map<Object?, dynamic>? parameters}) async {
-    final result = await pdfiumWasmSendCommand(command, parameters?.jsify()).toDart;
+  Future<Map<Object?, dynamic>> sendCommand(String command,
+      {Map<Object?, dynamic>? parameters}) async {
+    final result =
+        await pdfiumWasmSendCommand(command, parameters?.jsify()).toDart;
     return (result.dartify()) as Map<Object?, dynamic>;
   }
 
@@ -96,7 +104,8 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
 
   @override
   Future<PdfDocument> openCustom({
-    required FutureOr<int> Function(Uint8List buffer, int position, int size) read,
+    required FutureOr<int> Function(Uint8List buffer, int position, int size)
+        read,
     required int fileSize,
     required String sourceName,
     PdfPasswordProvider? passwordProvider,
@@ -115,25 +124,29 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
     String? sourceName,
     bool allowDataOwnershipTransfer = false,
     void Function()? onDispose,
-  }) => _openByFunc(
-    (password) => sendCommand('loadDocumentFromData', parameters: {'data': data, 'password': password}),
-    sourceName: sourceName ?? 'data',
-    factory: this,
-    passwordProvider: passwordProvider,
-    onDispose: onDispose,
-  );
+  }) =>
+      _openByFunc(
+        (password) => sendCommand('loadDocumentFromData',
+            parameters: {'data': data, 'password': password}),
+        sourceName: sourceName ?? 'data',
+        factory: this,
+        passwordProvider: passwordProvider,
+        onDispose: onDispose,
+      );
 
   @override
   Future<PdfDocument> openFile(
     String filePath, {
     PdfPasswordProvider? passwordProvider,
     bool firstAttemptByEmptyPassword = true,
-  }) => _openByFunc(
-    (password) => sendCommand('loadDocumentFromUrl', parameters: {'url': filePath, 'password': password}),
-    sourceName: filePath,
-    factory: this,
-    passwordProvider: passwordProvider,
-  );
+  }) =>
+      _openByFunc(
+        (password) => sendCommand('loadDocumentFromUrl',
+            parameters: {'url': filePath, 'password': password}),
+        sourceName: filePath,
+        factory: this,
+        passwordProvider: passwordProvider,
+      );
 
   @override
   Future<PdfDocument> openUri(
@@ -145,12 +158,14 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
     bool preferRangeAccess = false,
     Map<String, String>? headers,
     bool withCredentials = false,
-  }) => _openByFunc(
-    (password) => sendCommand('loadDocumentFromUrl', parameters: {'url': uri.toString(), 'password': password}),
-    sourceName: uri.toString(),
-    factory: this,
-    passwordProvider: passwordProvider,
-  );
+  }) =>
+      _openByFunc(
+        (password) => sendCommand('loadDocumentFromUrl',
+            parameters: {'url': uri.toString(), 'password': password}),
+        sourceName: uri.toString(),
+        factory: this,
+        passwordProvider: passwordProvider,
+      );
 
   Future<PdfDocument> _openByFunc(
     Future<Map<Object?, dynamic>> Function(String? password) openDocument, {
@@ -160,14 +175,15 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
     bool firstAttemptByEmptyPassword = true,
     void Function()? onDispose,
   }) async {
-    for (int i = 0; ; i++) {
+    for (int i = 0;; i++) {
       final String? password;
       if (firstAttemptByEmptyPassword && i == 0) {
         password = null;
       } else {
         password = await passwordProvider?.call();
         if (password == null) {
-          throw const PdfPasswordException('No password supplied by PasswordProvider.');
+          throw const PdfPasswordException(
+              'No password supplied by PasswordProvider.');
         }
       }
 
@@ -181,17 +197,20 @@ class PdfDocumentFactoryWasmImpl extends PdfDocumentFactory {
         if (errorCode == fpdfErrPassword) {
           continue;
         }
-        throw StateError('Failed to open document: ${result['errorCodeStr']} ($errorCode)');
+        throw StateError(
+            'Failed to open document: ${result['errorCodeStr']} ($errorCode)');
       }
 
-      return PdfDocumentWasm._(result, sourceName: sourceName, disposeCallback: onDispose, factory: factory);
+      return PdfDocumentWasm._(result,
+          sourceName: sourceName, disposeCallback: onDispose, factory: factory);
     }
   }
 }
 
 class PdfDocumentWasm extends PdfDocument {
-  PdfDocumentWasm._(this.document, {required super.sourceName, required this.factory, this.disposeCallback})
-    : permissions = parsePermissions(document) {
+  PdfDocumentWasm._(this.document,
+      {required super.sourceName, required this.factory, this.disposeCallback})
+      : permissions = parsePermissions(document) {
     pages = parsePages(this, document);
   }
 
@@ -217,12 +236,14 @@ class PdfDocumentWasm extends PdfDocument {
 
   @override
   bool isIdenticalDocumentHandle(Object? other) {
-    return other is PdfDocumentWasm && other.document['docHandle'] == document['docHandle'];
+    return other is PdfDocumentWasm &&
+        other.document['docHandle'] == document['docHandle'];
   }
 
   @override
   Future<List<PdfOutlineNode>> loadOutline() async {
-    final result = await factory.sendCommand('loadOutline', parameters: {'docHandle': document['docHandle']});
+    final result = await factory.sendCommand('loadOutline',
+        parameters: {'docHandle': document['docHandle']});
     final outlineList = result['outline'] as List<dynamic>;
     return outlineList.map((node) => _nodeFromMap(node)).toList();
   }
@@ -231,7 +252,9 @@ class PdfDocumentWasm extends PdfDocument {
     return PdfOutlineNode(
       title: node['title'],
       dest: _pdfDestFromMap(node['dest']),
-      children: (node['children'] as List<dynamic>).map((child) => _nodeFromMap(child)).toList(),
+      children: (node['children'] as List<dynamic>)
+          .map((child) => _nodeFromMap(child))
+          .toList(),
     );
   }
 
@@ -240,7 +263,8 @@ class PdfDocumentWasm extends PdfDocument {
 
   static PdfPermissions? parsePermissions(Map<Object?, dynamic> document) {
     final perms = (document['permissions'] as num).toInt();
-    final securityHandlerRevision = (document['securityHandlerRevision'] as num).toInt();
+    final securityHandlerRevision =
+        (document['securityHandlerRevision'] as num).toInt();
     if (perms >= 0 && securityHandlerRevision >= 0) {
       return PdfPermissions(perms, securityHandlerRevision);
     } else {
@@ -248,7 +272,8 @@ class PdfDocumentWasm extends PdfDocument {
     }
   }
 
-  static List<PdfPage> parsePages(PdfDocumentWasm doc, Map<Object?, dynamic> document) {
+  static List<PdfPage> parsePages(
+      PdfDocumentWasm doc, Map<Object?, dynamic> document) {
     final pageList = document['pages'] as List<dynamic>;
     return pageList
         .map(
@@ -264,7 +289,8 @@ class PdfDocumentWasm extends PdfDocument {
   }
 }
 
-class PdfPageRenderCancellationTokenWasm extends PdfPageRenderCancellationToken {
+class PdfPageRenderCancellationTokenWasm
+    extends PdfPageRenderCancellationToken {
   PdfPageRenderCancellationTokenWasm();
 
   bool _isCanceled = false;
@@ -279,9 +305,10 @@ class PdfPageRenderCancellationTokenWasm extends PdfPageRenderCancellationToken 
 }
 
 class PdfPageWasm extends PdfPage {
-  PdfPageWasm(this.document, int pageIndex, this.width, this.height, int rotation)
-    : pageNumber = pageIndex + 1,
-      rotation = PdfPageRotation.values[rotation];
+  PdfPageWasm(
+      this.document, int pageIndex, this.width, this.height, int rotation)
+      : pageNumber = pageIndex + 1,
+        rotation = PdfPageRotation.values[rotation];
 
   @override
   PdfPageRenderCancellationToken createCancellationToken() {
@@ -295,17 +322,20 @@ class PdfPageWasm extends PdfPage {
   Future<List<PdfLink>> loadLinks({bool compact = false}) async {
     final result = await document.factory.sendCommand(
       'loadLinks',
-      parameters: {'docHandle': document.document['docHandle'], 'pageIndex': pageNumber - 1},
+      parameters: {
+        'docHandle': document.document['docHandle'],
+        'pageIndex': pageNumber - 1
+      },
     );
     return (result['links'] as List).map((link) {
       if (link is! Map<Object?, dynamic>) {
         throw FormatException('Unexpected link structure: $link');
       }
-      final rects =
-          (link['rects'] as List).map((r) {
-            final rect = r as List;
-            return PdfRect(rect[0] as double, rect[1] as double, rect[2] as double, rect[3] as double);
-          }).toList();
+      final rects = (link['rects'] as List).map((r) {
+        final rect = r as List;
+        return PdfRect(rect[0] as double, rect[1] as double, rect[2] as double,
+            rect[3] as double);
+      }).toList();
       final url = link['url'];
       if (url is String) {
         return PdfLink(rects, url: Uri.parse(url));
@@ -322,20 +352,25 @@ class PdfPageWasm extends PdfPage {
   Future<PdfPageText> loadText() async {
     final result = await document.factory.sendCommand(
       'loadText',
-      parameters: {'docHandle': document.document['docHandle'], 'pageIndex': pageNumber - 1},
+      parameters: {
+        'docHandle': document.document['docHandle'],
+        'pageIndex': pageNumber - 1
+      },
     );
-    final pageText = PdfPageTextJs(pageNumber: pageNumber, fullText: result['fullText'], fragments: []);
+    final pageText = PdfPageTextJs(
+        pageNumber: pageNumber, fullText: result['fullText'], fragments: []);
     final fragmentOffsets = result['fragments'];
     final charRectsAll = result['charRects'] as List;
     if (fragmentOffsets is List) {
       int pos = 0;
       for (final fragment in fragmentOffsets.map((n) => (n as num).toInt())) {
-        final charRects =
-            charRectsAll.sublist(pos, pos + fragment).map((rect) {
-              final r = rect as List;
-              return PdfRect(r[0] as double, r[1] as double, r[2] as double, r[3] as double);
-            }).toList();
-        pageText.fragments.add(PdfPageTextFragmentPdfium(pageText, pos, fragment, charRects.boundingRect(), charRects));
+        final charRects = charRectsAll.sublist(pos, pos + fragment).map((rect) {
+          final r = rect as List;
+          return PdfRect(
+              r[0] as double, r[1] as double, r[2] as double, r[3] as double);
+        }).toList();
+        pageText.fragments.add(PdfPageTextFragmentPdfium(
+            pageText, pos, fragment, charRects.boundingRect(), charRects));
         pos += fragment;
       }
     }
@@ -363,7 +398,8 @@ class PdfPageWasm extends PdfPage {
     double? fullWidth,
     double? fullHeight,
     Color? backgroundColor,
-    PdfAnnotationRenderingMode annotationRenderingMode = PdfAnnotationRenderingMode.annotationAndForms,
+    PdfAnnotationRenderingMode annotationRenderingMode =
+        PdfAnnotationRenderingMode.annotationAndForms,
     PdfPageRenderCancellationToken? cancellationToken,
   }) async {
     fullWidth ??= this.width;
@@ -383,20 +419,25 @@ class PdfPageWasm extends PdfPage {
         'height': height,
         'fullWidth': fullWidth,
         'fullHeight': fullHeight,
-        'backgroundColor': backgroundColor.toARGB32(),
+        'backgroundColor': backgroundColor.value,
         'annotationRenderingMode': annotationRenderingMode.index,
         'formHandle': document.document['formHandle'],
       },
     );
     final bb = result['imageData'] as ByteBuffer;
     final pixels = Uint8List.view(bb.asByteData().buffer, 0, bb.lengthInBytes);
-    return PdfImageWeb(width: width, height: height, pixels: pixels, format: ui.PixelFormat.bgra8888);
+    return PdfImageWeb(
+        width: width,
+        height: height,
+        pixels: pixels,
+        format: ui.PixelFormat.bgra8888);
   }
 }
 
 @immutable
 class PdfPageTextFragmentPdfium implements PdfPageTextFragment {
-  const PdfPageTextFragmentPdfium(this.pageText, this.index, this.length, this.bounds, this.charRects);
+  const PdfPageTextFragmentPdfium(
+      this.pageText, this.index, this.length, this.bounds, this.charRects);
 
   final PdfPageText pageText;
 

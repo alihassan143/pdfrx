@@ -38,3 +38,6 @@ build/
 /test/.tmp
 
 CLAUDE.md
+
+# FVM Version Cache
+.fvm/

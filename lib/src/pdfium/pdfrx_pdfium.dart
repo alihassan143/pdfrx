@@ -21,12 +21,14 @@ PdfDocumentFactory? _pdfiumDocumentFactory;
 ///
 /// For Flutter Web, you must set up Pdfium WASM module.
 /// For more information, see [Enable Pdfium WASM support](https://github.com/espresso3389/pdfrx/wiki/Enable-Pdfium-WASM-support).
-PdfDocumentFactory getPdfiumDocumentFactory() => _pdfiumDocumentFactory ??= PdfDocumentFactoryImpl();
+PdfDocumentFactory getPdfiumDocumentFactory() =>
+    _pdfiumDocumentFactory ??= PdfDocumentFactoryImpl();
 
 /// Get [PdfDocumentFactory] backed by PDF.js.
 ///
 /// It throws [UnsupportedError] on non-Web platforms.
-PdfDocumentFactory getPdfjsDocumentFactory() => throw UnsupportedError('Pdf.js is only supported on Web');
+PdfDocumentFactory getPdfjsDocumentFactory() =>
+    throw UnsupportedError('Pdf.js is only supported on Web');
 
 /// Get the default [PdfDocumentFactory].
 PdfDocumentFactory getDocumentFactory() => getPdfiumDocumentFactory();
@@ -61,11 +63,13 @@ bool _initialized = false;
 void _init() {
   if (_initialized) return;
   using((arena) {
-    final config = arena.allocate<pdfium_bindings.FPDF_LIBRARY_CONFIG>(sizeOf<pdfium_bindings.FPDF_LIBRARY_CONFIG>());
+    final config = arena.allocate<pdfium_bindings.FPDF_LIBRARY_CONFIG>(
+        sizeOf<pdfium_bindings.FPDF_LIBRARY_CONFIG>());
     config.ref.version = 2;
 
     if (Pdfrx.fontPaths.isNotEmpty) {
-      final fontPathArray = arena.allocate<Pointer<Char>>(sizeOf<Pointer<Char>>() * (Pdfrx.fontPaths.length + 1));
+      final fontPathArray = arena.allocate<Pointer<Char>>(
+          sizeOf<Pointer<Char>>() * (Pdfrx.fontPaths.length + 1));
       for (int i = 0; i < Pdfrx.fontPaths.length; i++) {
         fontPathArray[i] = Pdfrx.fontPaths[i].toUtf8(arena);
       }
@@ -108,13 +112,14 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
     String? sourceName,
     bool allowDataOwnershipTransfer = false, // just ignored
     void Function()? onDispose,
-  }) => _openData(
-    data,
-    sourceName ?? 'memory-${data.hashCode}',
-    passwordProvider: passwordProvider,
-    firstAttemptByEmptyPassword: firstAttemptByEmptyPassword,
-    onDispose: onDispose,
-  );
+  }) =>
+      _openData(
+        data,
+        sourceName ?? 'memory-${data.hashCode}',
+        passwordProvider: passwordProvider,
+        firstAttemptByEmptyPassword: firstAttemptByEmptyPassword,
+        onDispose: onDispose,
+      );
 
   @override
   Future<PdfDocument> openFile(
@@ -124,8 +129,10 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
   }) {
     _init();
     return _openByFunc(
-      (password) async => (await backgroundWorker).computeWithArena((arena, params) {
-        final doc = pdfium.FPDF_LoadDocument(params.filePath.toUtf8(arena), params.password?.toUtf8(arena) ?? nullptr);
+      (password) async =>
+          (await backgroundWorker).computeWithArena((arena, params) {
+        final doc = pdfium.FPDF_LoadDocument(params.filePath.toUtf8(arena),
+            params.password?.toUtf8(arena) ?? nullptr);
         return doc.address;
       }, (filePath: filePath, password: password)),
       sourceName: filePath,
@@ -164,7 +171,8 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
 
   @override
   Future<PdfDocument> openCustom({
-    required FutureOr<int> Function(Uint8List buffer, int position, int size) read,
+    required FutureOr<int> Function(Uint8List buffer, int position, int size)
+        read,
     required int fileSize,
     required String sourceName,
     PdfPasswordProvider? passwordProvider,
@@ -183,12 +191,11 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
         await read(buffer.asTypedList(fileSize), 0, fileSize);
         return _openByFunc(
           (password) async => (await backgroundWorker).computeWithArena(
-            (arena, params) =>
-                pdfium.FPDF_LoadMemDocument(
-                  Pointer<Void>.fromAddress(params.buffer),
-                  params.fileSize,
-                  params.password?.toUtf8(arena) ?? nullptr,
-                ).address,
+            (arena, params) => pdfium.FPDF_LoadMemDocument(
+              Pointer<Void>.fromAddress(params.buffer),
+              params.fileSize,
+              params.password?.toUtf8(arena) ?? nullptr,
+            ).address,
             (buffer: buffer.address, fileSize: fileSize, password: password),
           ),
           sourceName: sourceName,
@@ -213,11 +220,11 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
     try {
       return _openByFunc(
         (password) async => (await backgroundWorker).computeWithArena(
-          (arena, params) =>
-              pdfium.FPDF_LoadCustomDocument(
-                Pointer<pdfium_bindings.FPDF_FILEACCESS>.fromAddress(params.fileAccess),
-                params.password?.toUtf8(arena) ?? nullptr,
-              ).address,
+          (arena, params) => pdfium.FPDF_LoadCustomDocument(
+            Pointer<pdfium_bindings.FPDF_FILEACCESS>.fromAddress(
+                params.fileAccess),
+            params.password?.toUtf8(arena) ?? nullptr,
+          ).address,
           (fileAccess: fa.fileAccess.address, password: password),
         ),
         sourceName: sourceName,
@@ -247,15 +254,16 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
     bool preferRangeAccess = false,
     Map<String, String>? headers,
     bool withCredentials = false,
-  }) => pdfDocumentFromUri(
-    uri,
-    passwordProvider: passwordProvider,
-    firstAttemptByEmptyPassword: firstAttemptByEmptyPassword,
-    progressCallback: progressCallback,
-    reportCallback: reportCallback,
-    useRangeAccess: preferRangeAccess,
-    headers: headers,
-  );
+  }) =>
+      pdfDocumentFromUri(
+        uri,
+        passwordProvider: passwordProvider,
+        firstAttemptByEmptyPassword: firstAttemptByEmptyPassword,
+        progressCallback: progressCallback,
+        reportCallback: reportCallback,
+        useRangeAccess: preferRangeAccess,
+        headers: headers,
+      );
 
   static bool _isPasswordError({int? error}) {
     if (Platform.isWindows) {
@@ -274,14 +282,15 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
     bool firstAttemptByEmptyPassword = true,
     void Function()? disposeCallback,
   }) async {
-    for (int i = 0; ; i++) {
+    for (int i = 0;; i++) {
       final String? password;
       if (firstAttemptByEmptyPassword && i == 0) {
         password = null;
       } else {
         password = await passwordProvider?.call();
         if (password == null) {
-          throw const PdfPasswordException('No password supplied by PasswordProvider.');
+          throw const PdfPasswordException(
+              'No password supplied by PasswordProvider.');
         }
       }
       final doc = await openPdfDocument(password);
@@ -295,13 +304,15 @@ class PdfDocumentFactoryImpl extends PdfDocumentFactory {
       if (_isPasswordError()) {
         continue;
       }
-      throw PdfException('Failed to load PDF document (FPDF_GetLastError=${pdfium.FPDF_GetLastError()}).');
+      throw PdfException(
+          'Failed to load PDF document (FPDF_GetLastError=${pdfium.FPDF_GetLastError()}).');
     }
   }
 }
 
 extension FpdfUtf8StringExt on String {
-  Pointer<Char> toUtf8(Arena arena) => Pointer.fromAddress(toNativeUtf8(allocator: arena).address);
+  Pointer<Char> toUtf8(Arena arena) =>
+      Pointer.fromAddress(toNativeUtf8(allocator: arena).address);
 }
 
 class PdfDocumentPdfium extends PdfDocument {
@@ -345,9 +356,11 @@ class PdfDocumentPdfium extends PdfDocument {
           try {
             final pageCount = pdfium.FPDF_GetPageCount(doc);
             final permissions = pdfium.FPDF_GetDocPermissions(doc);
-            final securityHandlerRevision = pdfium.FPDF_GetSecurityHandlerRevision(doc);
+            final securityHandlerRevision =
+                pdfium.FPDF_GetSecurityHandlerRevision(doc);
 
-            formInfo = calloc.allocate<pdfium_bindings.FPDF_FORMFILLINFO>(sizeOf<pdfium_bindings.FPDF_FORMFILLINFO>());
+            formInfo = calloc.allocate<pdfium_bindings.FPDF_FORMFILLINFO>(
+                sizeOf<pdfium_bindings.FPDF_FORMFILLINFO>());
             formInfo.ref.version = 1;
             formHandle = pdfium.FPDFDOC_InitFormFillEnvironment(doc, formInfo);
 
@@ -384,12 +397,13 @@ class PdfDocumentPdfium extends PdfDocument {
         doc,
         sourceName: sourceName,
         securityHandlerRevision: result.securityHandlerRevision,
-        permissions:
-            result.securityHandlerRevision != -1
-                ? PdfPermissions(result.permissions, result.securityHandlerRevision)
-                : null,
-        formHandle: pdfium_bindings.FPDF_FORMHANDLE.fromAddress(result.formHandle),
-        formInfo: Pointer<pdfium_bindings.FPDF_FORMFILLINFO>.fromAddress(result.formInfo),
+        permissions: result.securityHandlerRevision != -1
+            ? PdfPermissions(result.permissions, result.securityHandlerRevision)
+            : null,
+        formHandle:
+            pdfium_bindings.FPDF_FORMHANDLE.fromAddress(result.formHandle),
+        formInfo: Pointer<pdfium_bindings.FPDF_FORMFILLINFO>.fromAddress(
+            result.formInfo),
         disposeCallback: disposeCallback,
       );
 
@@ -426,30 +440,39 @@ class PdfDocumentPdfium extends PdfDocument {
     if (!isDisposed) {
       isDisposed = true;
       await (await backgroundWorker).compute((params) {
-        final formHandle = pdfium_bindings.FPDF_FORMHANDLE.fromAddress(params.formHandle);
-        final formInfo = Pointer<pdfium_bindings.FPDF_FORMFILLINFO>.fromAddress(params.formInfo);
+        final formHandle =
+            pdfium_bindings.FPDF_FORMHANDLE.fromAddress(params.formHandle);
+        final formInfo = Pointer<pdfium_bindings.FPDF_FORMFILLINFO>.fromAddress(
+            params.formInfo);
         pdfium.FPDFDOC_ExitFormFillEnvironment(formHandle);
         calloc.free(formInfo);
 
         final doc = pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
         pdfium.FPDF_CloseDocument(doc);
-      }, (formHandle: formHandle.address, formInfo: formInfo.address, document: document.address));
+      }, (
+        formHandle: formHandle.address,
+        formInfo: formInfo.address,
+        document: document.address
+      ));
 
       disposeCallback?.call();
     }
   }
 
   @override
-  Future<List<PdfOutlineNode>> loadOutline() async =>
-      isDisposed
-          ? <PdfOutlineNode>[]
-          : await (await backgroundWorker).compute(
-            (params) => using((arena) {
-              final document = pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
-              return _getOutlineNodeSiblings(pdfium.FPDFBookmark_GetFirstChild(document, nullptr), document, arena);
-            }),
-            (document: document.address),
-          );
+  Future<List<PdfOutlineNode>> loadOutline() async => isDisposed
+      ? <PdfOutlineNode>[]
+      : await (await backgroundWorker).compute(
+          (params) => using((arena) {
+            final document =
+                pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
+            return _getOutlineNodeSiblings(
+                pdfium.FPDFBookmark_GetFirstChild(document, nullptr),
+                document,
+                arena);
+          }),
+          (document: document.address),
+        );
 
   static List<PdfOutlineNode> _getOutlineNodeSiblings(
     pdfium_bindings.FPDF_BOOKMARK bookmark,
@@ -464,8 +487,12 @@ class PdfDocumentPdfium extends PdfDocument {
       siblings.add(
         PdfOutlineNode(
           title: titleBuf.cast<Utf16>().toDartString(),
-          dest: _pdfDestFromDest(pdfium.FPDFBookmark_GetDest(document, bookmark), document, arena),
-          children: _getOutlineNodeSiblings(pdfium.FPDFBookmark_GetFirstChild(document, bookmark), document, arena),
+          dest: _pdfDestFromDest(
+              pdfium.FPDFBookmark_GetDest(document, bookmark), document, arena),
+          children: _getOutlineNodeSiblings(
+              pdfium.FPDFBookmark_GetFirstChild(document, bookmark),
+              document,
+              arena),
         ),
       );
       bookmark = pdfium.FPDFBookmark_GetNextSibling(document, bookmark);
@@ -504,10 +531,12 @@ class PdfPagePdfium extends PdfPage {
     double? fullWidth,
     double? fullHeight,
     Color? backgroundColor,
-    PdfAnnotationRenderingMode annotationRenderingMode = PdfAnnotationRenderingMode.annotationAndForms,
+    PdfAnnotationRenderingMode annotationRenderingMode =
+        PdfAnnotationRenderingMode.annotationAndForms,
     PdfPageRenderCancellationToken? cancellationToken,
   }) async {
-    if (cancellationToken != null && cancellationToken is! PdfPageRenderCancellationTokenPdfium) {
+    if (cancellationToken != null &&
+        cancellationToken is! PdfPageRenderCancellationTokenPdfium) {
       throw ArgumentError(
         'cancellationToken must be created by PdfPage.createCancellationToken().',
         'cancellationToken',
@@ -541,16 +570,20 @@ class PdfPagePdfium extends PdfPage {
               params.width * rgbaSize,
             );
             if (bmp == nullptr) {
-              throw PdfException('FPDFBitmap_CreateEx(${params.width}, ${params.height}) failed.');
+              throw PdfException(
+                  'FPDFBitmap_CreateEx(${params.width}, ${params.height}) failed.');
             }
             pdfium_bindings.FPDF_PAGE page = nullptr;
             try {
-              final doc = pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
+              final doc =
+                  pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
               page = pdfium.FPDF_LoadPage(doc, params.pageNumber - 1);
               if (page == nullptr) {
-                throw PdfException('FPDF_LoadPage(${params.pageNumber}) failed.');
+                throw PdfException(
+                    'FPDF_LoadPage(${params.pageNumber}) failed.');
               }
-              pdfium.FPDFBitmap_FillRect(bmp, 0, 0, params.width, params.height, params.backgroundColor);
+              pdfium.FPDFBitmap_FillRect(bmp, 0, 0, params.width, params.height,
+                  params.backgroundColor);
               pdfium.FPDF_RenderPageBitmap(
                 bmp,
                 page,
@@ -559,13 +592,18 @@ class PdfPagePdfium extends PdfPage {
                 params.fullWidth,
                 params.fullHeight,
                 0,
-                params.annotationRenderingMode != PdfAnnotationRenderingMode.none ? pdfium_bindings.FPDF_ANNOT : 0,
+                params.annotationRenderingMode !=
+                        PdfAnnotationRenderingMode.none
+                    ? pdfium_bindings.FPDF_ANNOT
+                    : 0,
               );
 
               if (params.formHandle != 0 &&
-                  params.annotationRenderingMode == PdfAnnotationRenderingMode.annotationAndForms) {
+                  params.annotationRenderingMode ==
+                      PdfAnnotationRenderingMode.annotationAndForms) {
                 pdfium.FPDF_FFLDraw(
-                  pdfium_bindings.FPDF_FORMHANDLE.fromAddress(params.formHandle),
+                  pdfium_bindings.FPDF_FORMHANDLE
+                      .fromAddress(params.formHandle),
                   bmp,
                   page,
                   -params.x,
@@ -592,7 +630,7 @@ class PdfPagePdfium extends PdfPage {
             height: height!,
             fullWidth: fullWidth!.toInt(),
             fullHeight: fullHeight!.toInt(),
-            backgroundColor: backgroundColor!.toARGB32(),
+            backgroundColor: backgroundColor!.value,
             annotationRenderingMode: annotationRenderingMode,
             formHandle: document.formHandle.address,
             formInfo: document.formInfo.address,
@@ -607,7 +645,8 @@ class PdfPagePdfium extends PdfPage {
 
       final resultBuffer = buffer;
       buffer = nullptr;
-      return PdfImagePdfium._(width: width, height: height, buffer: resultBuffer);
+      return PdfImagePdfium._(
+          width: width, height: height, buffer: resultBuffer);
     } catch (e) {
       return null;
     } finally {
@@ -617,7 +656,8 @@ class PdfPagePdfium extends PdfPage {
   }
 
   @override
-  PdfPageRenderCancellationTokenPdfium createCancellationToken() => PdfPageRenderCancellationTokenPdfium(this);
+  PdfPageRenderCancellationTokenPdfium createCancellationToken() =>
+      PdfPageRenderCancellationTokenPdfium(this);
 
   @override
   Future<PdfPageText> loadText() => PdfPageTextPdfium._loadText(this);
@@ -633,93 +673,100 @@ class PdfPagePdfium extends PdfPage {
     return List.unmodifiable(links);
   }
 
-  Future<List<PdfLink>> _loadLinks() async =>
-      document.isDisposed
-          ? []
-          : await (await backgroundWorker).compute((params) {
-            pdfium_bindings.FPDF_PAGE page = nullptr;
-            pdfium_bindings.FPDF_TEXTPAGE textPage = nullptr;
-            pdfium_bindings.FPDF_PAGELINK linkPage = nullptr;
-            try {
-              final document = pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
-              page = pdfium.FPDF_LoadPage(document, params.pageNumber - 1);
-              textPage = pdfium.FPDFText_LoadPage(page);
-              if (textPage == nullptr) return [];
-              linkPage = pdfium.FPDFLink_LoadWebLinks(textPage);
-              if (linkPage == nullptr) return [];
+  Future<List<PdfLink>> _loadLinks() async => document.isDisposed
+      ? []
+      : await (await backgroundWorker).compute((params) {
+          pdfium_bindings.FPDF_PAGE page = nullptr;
+          pdfium_bindings.FPDF_TEXTPAGE textPage = nullptr;
+          pdfium_bindings.FPDF_PAGELINK linkPage = nullptr;
+          try {
+            final document =
+                pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
+            page = pdfium.FPDF_LoadPage(document, params.pageNumber - 1);
+            textPage = pdfium.FPDFText_LoadPage(page);
+            if (textPage == nullptr) return [];
+            linkPage = pdfium.FPDFLink_LoadWebLinks(textPage);
+            if (linkPage == nullptr) return [];
 
-              final doubleSize = sizeOf<Double>();
-              return using((arena) {
-                final rectBuffer = arena.allocate<Double>(4 * doubleSize);
-                return List.generate(pdfium.FPDFLink_CountWebLinks(linkPage), (index) {
-                  final rects = List.generate(pdfium.FPDFLink_CountRects(linkPage, index), (rectIndex) {
-                    pdfium.FPDFLink_GetRect(
-                      linkPage,
-                      index,
-                      rectIndex,
-                      rectBuffer,
-                      rectBuffer.offset(doubleSize),
-                      rectBuffer.offset(doubleSize * 2),
-                      rectBuffer.offset(doubleSize * 3),
-                    );
-                    return _rectFromLTRBBuffer(rectBuffer);
-                  });
-                  return PdfLink(rects, url: Uri.parse(_getLinkUrl(linkPage, index, arena)));
+            final doubleSize = sizeOf<Double>();
+            return using((arena) {
+              final rectBuffer = arena.allocate<Double>(4 * doubleSize);
+              return List.generate(pdfium.FPDFLink_CountWebLinks(linkPage),
+                  (index) {
+                final rects = List.generate(
+                    pdfium.FPDFLink_CountRects(linkPage, index), (rectIndex) {
+                  pdfium.FPDFLink_GetRect(
+                    linkPage,
+                    index,
+                    rectIndex,
+                    rectBuffer,
+                    rectBuffer.offset(doubleSize),
+                    rectBuffer.offset(doubleSize * 2),
+                    rectBuffer.offset(doubleSize * 3),
+                  );
+                  return _rectFromLTRBBuffer(rectBuffer);
                 });
+                return PdfLink(rects,
+                    url: Uri.parse(_getLinkUrl(linkPage, index, arena)));
               });
-            } finally {
-              pdfium.FPDFLink_CloseWebLinks(linkPage);
-              pdfium.FPDFText_ClosePage(textPage);
-              pdfium.FPDF_ClosePage(page);
-            }
-          }, (document: document.document.address, pageNumber: pageNumber));
+            });
+          } finally {
+            pdfium.FPDFLink_CloseWebLinks(linkPage);
+            pdfium.FPDFText_ClosePage(textPage);
+            pdfium.FPDF_ClosePage(page);
+          }
+        }, (document: document.document.address, pageNumber: pageNumber));
 
-  static String _getLinkUrl(pdfium_bindings.FPDF_PAGELINK linkPage, int linkIndex, Arena arena) {
+  static String _getLinkUrl(
+      pdfium_bindings.FPDF_PAGELINK linkPage, int linkIndex, Arena arena) {
     final urlLength = pdfium.FPDFLink_GetURL(linkPage, linkIndex, nullptr, 0);
-    final urlBuffer = arena.allocate<UnsignedShort>(urlLength * sizeOf<UnsignedShort>());
+    final urlBuffer =
+        arena.allocate<UnsignedShort>(urlLength * sizeOf<UnsignedShort>());
     pdfium.FPDFLink_GetURL(linkPage, linkIndex, urlBuffer, urlLength);
     return urlBuffer.cast<Utf16>().toDartString();
   }
 
-  Future<List<PdfLink>> _loadAnnotLinks() async =>
-      document.isDisposed
-          ? []
-          : await (await backgroundWorker).compute(
-            (params) => using((arena) {
-              final document = pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
-              final page = pdfium.FPDF_LoadPage(document, params.pageNumber - 1);
-              try {
-                final count = pdfium.FPDFPage_GetAnnotCount(page);
-                final rectf = arena.allocate<pdfium_bindings.FS_RECTF>(sizeOf<pdfium_bindings.FS_RECTF>());
-                final links = <PdfLink>[];
-                for (int i = 0; i < count; i++) {
-                  final annot = pdfium.FPDFPage_GetAnnot(page, i);
-                  pdfium.FPDFAnnot_GetRect(annot, rectf);
-                  final r = rectf.ref;
-                  final rect = PdfRect(
-                    r.left,
-                    r.top > r.bottom ? r.top : r.bottom,
-                    r.right,
-                    r.top > r.bottom ? r.bottom : r.top,
-                  );
-                  final dest = _processAnnotDest(annot, document, arena);
-                  if (dest != nullptr) {
-                    links.add(PdfLink([rect], dest: _pdfDestFromDest(dest, document, arena)));
-                  } else {
-                    final uri = _processAnnotLink(annot, document, arena);
-                    if (uri != null) {
-                      links.add(PdfLink([rect], url: uri));
-                    }
+  Future<List<PdfLink>> _loadAnnotLinks() async => document.isDisposed
+      ? []
+      : await (await backgroundWorker).compute(
+          (params) => using((arena) {
+            final document =
+                pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.document);
+            final page = pdfium.FPDF_LoadPage(document, params.pageNumber - 1);
+            try {
+              final count = pdfium.FPDFPage_GetAnnotCount(page);
+              final rectf = arena.allocate<pdfium_bindings.FS_RECTF>(
+                  sizeOf<pdfium_bindings.FS_RECTF>());
+              final links = <PdfLink>[];
+              for (int i = 0; i < count; i++) {
+                final annot = pdfium.FPDFPage_GetAnnot(page, i);
+                pdfium.FPDFAnnot_GetRect(annot, rectf);
+                final r = rectf.ref;
+                final rect = PdfRect(
+                  r.left,
+                  r.top > r.bottom ? r.top : r.bottom,
+                  r.right,
+                  r.top > r.bottom ? r.bottom : r.top,
+                );
+                final dest = _processAnnotDest(annot, document, arena);
+                if (dest != nullptr) {
+                  links.add(PdfLink([rect],
+                      dest: _pdfDestFromDest(dest, document, arena)));
+                } else {
+                  final uri = _processAnnotLink(annot, document, arena);
+                  if (uri != null) {
+                    links.add(PdfLink([rect], url: uri));
                   }
-                  pdfium.FPDFPage_CloseAnnot(annot);
                 }
-                return links;
-              } finally {
-                pdfium.FPDF_ClosePage(page);
+                pdfium.FPDFPage_CloseAnnot(annot);
               }
-            }),
-            (document: document.document.address, pageNumber: pageNumber),
-          );
+              return links;
+            } finally {
+              pdfium.FPDF_ClosePage(page);
+            }
+          }),
+          (document: document.document.address, pageNumber: pageNumber),
+        );
 
   static pdfium_bindings.FPDF_DEST _processAnnotDest(
     pdfium_bindings.FPDF_ANNOTATION annot,
@@ -754,7 +801,8 @@ class PdfPagePdfium extends PdfPage {
       case pdfium_bindings.PDFACTION_URI:
         final size = pdfium.FPDFAction_GetURIPath(document, action, nullptr, 0);
         final buffer = arena.allocate<Utf8>(size);
-        pdfium.FPDFAction_GetURIPath(document, action, buffer.cast<Void>(), size);
+        pdfium.FPDFAction_GetURIPath(
+            document, action, buffer.cast<Void>(), size);
         try {
           final String newBuffer = buffer.toDartString();
           return Uri.parse(newBuffer);
@@ -767,7 +815,8 @@ class PdfPagePdfium extends PdfPage {
   }
 }
 
-class PdfPageRenderCancellationTokenPdfium extends PdfPageRenderCancellationToken {
+class PdfPageRenderCancellationTokenPdfium
+    extends PdfPageRenderCancellationToken {
   PdfPageRenderCancellationTokenPdfium(this.page);
   final PdfPage page;
   Pointer<Bool>? _cancelFlag;
@@ -806,7 +855,11 @@ class PdfImagePdfium extends PdfImage {
 
   final Pointer<Uint8> _buffer;
 
-  PdfImagePdfium._({required this.width, required this.height, required Pointer<Uint8> buffer}) : _buffer = buffer;
+  PdfImagePdfium._(
+      {required this.width,
+      required this.height,
+      required Pointer<Uint8> buffer})
+      : _buffer = buffer;
 
   @override
   void dispose() {
@@ -816,7 +869,8 @@ class PdfImagePdfium extends PdfImage {
 
 @immutable
 class PdfPageTextFragmentPdfium implements PdfPageTextFragment {
-  const PdfPageTextFragmentPdfium(this.pageText, this.index, this.length, this.bounds, this.charRects);
+  const PdfPageTextFragmentPdfium(
+      this.pageText, this.index, this.length, this.bounds, this.charRects);
 
   final PdfPageText pageText;
 
@@ -835,7 +889,10 @@ class PdfPageTextFragmentPdfium implements PdfPageTextFragment {
 }
 
 class PdfPageTextPdfium extends PdfPageText {
-  PdfPageTextPdfium({required this.pageNumber, required this.fullText, required this.fragments});
+  PdfPageTextPdfium(
+      {required this.pageNumber,
+      required this.fullText,
+      required this.fragments});
 
   @override
   final int pageNumber;
@@ -847,32 +904,42 @@ class PdfPageTextPdfium extends PdfPageText {
 
   static Future<PdfPageTextPdfium> _loadText(PdfPagePdfium page) async {
     final result = await _load(page);
-    final pageText = PdfPageTextPdfium(pageNumber: page.pageNumber, fullText: result.fullText, fragments: []);
+    final pageText = PdfPageTextPdfium(
+        pageNumber: page.pageNumber, fullText: result.fullText, fragments: []);
     int pos = 0;
     for (final fragment in result.fragments) {
       final charRects = result.charRects.sublist(pos, pos + fragment);
-      pageText.fragments.add(PdfPageTextFragmentPdfium(pageText, pos, fragment, charRects.boundingRect(), charRects));
+      pageText.fragments.add(PdfPageTextFragmentPdfium(
+          pageText, pos, fragment, charRects.boundingRect(), charRects));
       pos += fragment;
     }
     return pageText;
   }
 
-  static Future<({String fullText, List<PdfRect> charRects, List<int> fragments})> _load(PdfPagePdfium page) async {
+  static Future<
+          ({String fullText, List<PdfRect> charRects, List<int> fragments})>
+      _load(PdfPagePdfium page) async {
     if (page.document.isDisposed) {
       return (fullText: '', charRects: <PdfRect>[], fragments: <int>[]);
     }
     return await (await backgroundWorker).compute(
       (params) => using((arena) {
         final doc = pdfium_bindings.FPDF_DOCUMENT.fromAddress(params.docHandle);
-        final pdfium_bindings.FPDF_PAGE page = pdfium.FPDF_LoadPage(doc, params.pageNumber - 1);
+        final pdfium_bindings.FPDF_PAGE page =
+            pdfium.FPDF_LoadPage(doc, params.pageNumber - 1);
 
         final textPage = pdfium.FPDFText_LoadPage(page);
         try {
           final charCount = pdfium.FPDFText_CountChars(textPage);
           final charRects = <PdfRect>[];
           final fragments = <int>[];
-          final fullText = _loadInternal(textPage, 0, charCount, arena, charRects, fragments);
-          return (fullText: fullText, charRects: charRects, fragments: fragments);
+          final fullText = _loadInternal(
+              textPage, 0, charCount, arena, charRects, fragments);
+          return (
+            fullText: fullText,
+            charRects: charRects,
+            fragments: fragments
+          );
         } finally {
           pdfium.FPDFText_ClosePage(textPage);
           pdfium.FPDF_ClosePage(page);
@@ -943,7 +1010,8 @@ class PdfPageTextPdfium extends PdfPageText {
       if (sb.length > lineStart) {
         const columnHeightThreshold = 72.0; // 1 inch
         final prev = charRects.last;
-        if (prev.left > rect.left || prev.bottom + columnHeightThreshold < rect.bottom) {
+        if (prev.left > rect.left ||
+            prev.bottom + columnHeightThreshold < rect.bottom) {
           if (_makeLineFlat(charRects, lineStart, sb.length, sb)) {
             if (sb.length > wordStart) {
               fragments.add(sb.length - wordStart);
@@ -967,7 +1035,8 @@ class PdfPageTextPdfium extends PdfPageText {
   }
 
   /// return true if any meaningful characters in the line (start -> end)
-  static bool _makeLineFlat(List<PdfRect> rects, int start, int end, StringBuffer sb) {
+  static bool _makeLineFlat(
+      List<PdfRect> rects, int start, int end, StringBuffer sb) {
     if (start >= end) return false;
     final str = sb.toString();
     final bounds = rects.skip(start).take(end - start).boundingRect();
@@ -977,17 +1046,20 @@ class PdfPageTextPdfium extends PdfPageText {
       final char = str.codeUnitAt(i);
       if (char == _charSpace) {
         final next = i + 1 < end ? rects[i + 1].left : null;
-        rects[i] = PdfRect(prev ?? rect.left, bounds.top, next ?? rect.right, bounds.bottom);
+        rects[i] = PdfRect(
+            prev ?? rect.left, bounds.top, next ?? rect.right, bounds.bottom);
         prev = null;
       } else {
-        rects[i] = PdfRect(prev ?? rect.left, bounds.top, rect.right, bounds.bottom);
+        rects[i] =
+            PdfRect(prev ?? rect.left, bounds.top, rect.right, bounds.bottom);
         prev = rect.right;
       }
     }
     return true;
   }
 
-  static String _getText(pdfium_bindings.FPDF_TEXTPAGE textPage, int from, int length, Arena arena) {
+  static String _getText(pdfium_bindings.FPDF_TEXTPAGE textPage, int from,
+      int length, Arena arena) {
     final count = pdfium.FPDFText_CountChars(textPage);
     final sb = StringBuffer();
     for (int i = 0; i < count; i++) {
@@ -1000,10 +1072,12 @@ class PdfPageTextPdfium extends PdfPageText {
   }
 }
 
-PdfRect _rectFromLTRBBuffer(Pointer<Double> buffer) => PdfRect(buffer[0], buffer[1], buffer[2], buffer[3]);
+PdfRect _rectFromLTRBBuffer(Pointer<Double> buffer) =>
+    PdfRect(buffer[0], buffer[1], buffer[2], buffer[3]);
 
 extension _PointerExt<T extends NativeType> on Pointer<T> {
-  Pointer<T> offset(int offsetInBytes) => Pointer.fromAddress(address + offsetInBytes);
+  Pointer<T> offset(int offsetInBytes) =>
+      Pointer.fromAddress(address + offsetInBytes);
 }
 
 extension _PdfRectsExt on List<PdfRect> {
@@ -1015,14 +1089,17 @@ extension _PdfRectsExt on List<PdfRect> {
   }
 }
 
-PdfDest? _pdfDestFromDest(pdfium_bindings.FPDF_DEST dest, pdfium_bindings.FPDF_DOCUMENT document, Arena arena) {
+PdfDest? _pdfDestFromDest(pdfium_bindings.FPDF_DEST dest,
+    pdfium_bindings.FPDF_DOCUMENT document, Arena arena) {
   if (dest == nullptr) return null;
   final pul = arena.allocate<UnsignedLong>(sizeOf<UnsignedLong>());
-  final values = arena.allocate<pdfium_bindings.FS_FLOAT>(sizeOf<pdfium_bindings.FS_FLOAT>() * 4);
+  final values = arena.allocate<pdfium_bindings.FS_FLOAT>(
+      sizeOf<pdfium_bindings.FS_FLOAT>() * 4);
   final pageIndex = pdfium.FPDFDest_GetDestPageIndex(document, dest);
   final type = pdfium.FPDFDest_GetView(dest, pul, values);
   if (type != 0) {
-    return PdfDest(pageIndex + 1, PdfDestCommand.values[type], List.generate(pul.value, (index) => values[index]));
+    return PdfDest(pageIndex + 1, PdfDestCommand.values[type],
+        List.generate(pul.value, (index) => values[index]));
   }
   return null;
 }
