@@ -23,7 +23,7 @@ dependencies:
   path:
   path_provider: ^2.1.5
   rxdart:
-  synchronized: ^3.3.1
+  synchronized:
   url_launcher: ^6.3.1
   vector_math: ^2.1.4
   web: ^1.1.1
